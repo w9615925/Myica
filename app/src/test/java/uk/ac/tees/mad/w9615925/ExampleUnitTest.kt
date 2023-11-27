@@ -1,4 +1,4 @@
-package com.example.myapplication
+package uk.ac.tees.mad.w9615925
 
 import org.junit.Test
 
