@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -15,6 +17,23 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar"
         tools:targetApi="31">
+        <activity
+            android:name=".Food"
+            android:exported="false" />
+        <activity
+            android:name=".Disease"
+            android:exported="false" />
+        <activity
+            android:name=".Sounds"
+            android:exported="false" />
+        <activity
+            android:name=".Hospital"
+            android:exported="false" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyA3JY3wDKQeK7J9SdEefd-bvb8MrkRri2o" />
+
         <activity
             android:name=".registerActivity"
             android:exported="false" />

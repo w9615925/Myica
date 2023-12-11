@@ -3,10 +3,16 @@ package uk.ac.tees.mad.w9615925
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Layout
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import okhttp3.Call
@@ -16,17 +22,47 @@ import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONArray
 import java.io.IOException
+import java.util.concurrent.Executor
 import kotlin.random.Random
 
 class DashboardActivity : AppCompatActivity() {
+
+    private lateinit var executor: Executor
+    private lateinit var biometricPrompt: BiometricPrompt
+    private lateinit var promptInfo: BiometricPrompt.PromptInfo
+
+    lateinit var hospital :ImageView
+    lateinit var disease :ImageView
+    lateinit var food:ImageView
+    lateinit var sounds :ImageView
 
     private lateinit var authFirebase: FirebaseAuth;
     val client = OkHttpClient()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_dashboard)
+
+        hospital = findViewById<ImageView>(R.id.imagepetshospital)
+        disease = findViewById(R.id.imagedogdisease)
+        food = findViewById(R.id.imagefood)
+        sounds = findViewById(R.id.imageSound)
+
+        hospital.setOnClickListener{
+            go(Hospital::class.java)
+        }
+        sounds.setOnClickListener{
+            go(Sounds::class.java)
+        }
+        disease.setOnClickListener{
+            go(Disease::class.java)
+        }
+        food.setOnClickListener{
+            go(Food::class.java)
+        }
+
         authFirebase = FirebaseAuth.getInstance()
-        checkForLogin()
+
+
 
         findViewById<Button>(R.id.signout).setOnClickListener {
             authFirebase.signOut()
@@ -37,11 +73,42 @@ class DashboardActivity : AppCompatActivity() {
         loadCatFact()
     }
 
+    fun go(classs:Class<*>)
+    {
+        startActivity(Intent(applicationContext,classs))
+
+    }
+
     fun checkForLogin() {
         if (authFirebase.currentUser == null) {
-            var inte: Intent = Intent(this, LoginActivity::class.java)
+            var inte = Intent(this, LoginActivity::class.java)
             startActivity(inte)
+        }else{
+            //startBiometricAuth()
         }
+    }
+
+    private fun startBiometricAuth() {
+        executor = ContextCompat.getMainExecutor(applicationContext)
+        biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence)
+            {
+                super.onAuthenticationError(errorCode, errString)
+
+                FirebaseAuth.getInstance().signOut()
+                finish()
+            }
+        })
+
+        promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Please Authenticate")
+            .setSubtitle("use Fingerprint")
+            .setNegativeButtonText("NO Account Password")
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+
 
     }
 
@@ -65,7 +132,7 @@ class DashboardActivity : AppCompatActivity() {
 
                     runOnUiThread {
                         val imageView = findViewById<ImageView>(R.id.wallimage)
-                        Glide.with(this@DashboardActivity).load(imageUrl).into(imageView)
+                        Glide.with(applicationContext).load(imageUrl).into(imageView)
                     }
                 }
             }
@@ -82,14 +149,6 @@ class DashboardActivity : AppCompatActivity() {
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
-                // Handle the error appropriately in the UI, e.g., show a toast message
-                runOnUiThread {
-                    Toast.makeText(
-                        applicationContext,
-                        "Failed to load cat facts",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -102,18 +161,13 @@ class DashboardActivity : AppCompatActivity() {
                         val textView = findViewById<TextView>(R.id.heading)
                         textView.text = fact
                     }
-                } else {
-                    // Handle the scenario where the response is not successful
-                    runOnUiThread {
-                        Toast.makeText(
-                            applicationContext,
-                            "Error fetching cat facts",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                    }
                 }
             }
         })
+    }
+
+    override fun onStart() {
+        super.onStart()
+        checkForLogin()
     }
 }
